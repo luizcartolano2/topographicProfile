@@ -1,3 +1,6 @@
+""" Docstring for the PointController.py file.
+
+"""
 import json
 import os
 from typing import Tuple

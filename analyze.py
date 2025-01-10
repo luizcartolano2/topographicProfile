@@ -1,6 +1,7 @@
 """ Docstring for the analyze.py file.
 
 """
+import logging
 import os
 
 import pandas as pd
@@ -8,12 +9,18 @@ import pandas as pd
 from analyzer.FileAnalyzer import FileAnalyzer
 from analyzer.TopographicProfile import TopographicProfile
 from controller import PointController
+from log import setup_logging
 
 filename = f'{os.getcwd()}/files/antennas-RJ.csv'
 output_dir = "outputs"
 
 
 if __name__ == '__main__':
+    setup_logging()
+
+    logger = logging.getLogger(__name__)
+    logger.info(f'Starting process to analyse the topographic profile of different points...')
+
     file_analyzer = FileAnalyzer(filename=filename)
     top_profile = TopographicProfile('google', 'AIzaSyB00vnm5fWSn7C6JLRgIkzL_EWe8oaCeRI')
 
