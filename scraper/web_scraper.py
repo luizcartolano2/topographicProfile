@@ -1,11 +1,17 @@
-""" Docstring for the WebScraper.py file.
+""" Docstring for the web_scraper.py file.
 
 """
+import logging
+
 from pyppeteer import launch
-from .FileManager import FileManager
+from .file_manager import FileManager
 
 
 class WebScraper:
+    """
+    This module defines the WebScraper class, which automates the process of scraping a webpage, applying a filter,
+    and downloading the resulting file. It uses the pyppeteer library to interact with the page and manage downloads.
+    """
     def __init__(self, url: str, download_path: str, headless: bool = True):
         """
         Constructor for the WebScraper class. It initializes the scraper with the URL to scrape, the download path, and
@@ -18,6 +24,9 @@ class WebScraper:
         self.url = url
         self.download_path = download_path
         self.headless = headless
+        self.browser = None
+        self.page = None
+        self.logger = logging.getLogger(__name__)
 
     async def __create_browser(self, headless: bool):
         """
@@ -48,6 +57,7 @@ class WebScraper:
         specifies the download path.
         """
         # Set the download behavior asynchronously
+        # pylint: disable=protected-access
         await self.page._client.send('Page.setDownloadBehavior', {
             'behavior': 'allow',
             'downloadPath': self.download_path
@@ -55,8 +65,8 @@ class WebScraper:
 
     async def download_file_for_state(self, state: str):
         """
-        Downloads a file for a specific state by interacting with the webpage, applying the state filter, and downloading
-        the results as a CSV file.
+        Downloads a file for a specific state by interacting with the webpage, applying the state filter,
+        and downloading the results as a CSV file.
 
         :param state: The state to filter by on the webpage.
         """

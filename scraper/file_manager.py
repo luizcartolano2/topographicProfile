@@ -1,12 +1,17 @@
-""" Docstring for the FileManager.py file.
+""" Docstring for the file_manager.py file.
 
 """
+import logging
 import os
 import time
 import zipfile
 
 
 class FileManager:
+    """
+    This module defines the FileManager class, which manages files in the download folder. It provides methods to wait
+    for the arrival of a file, unzip it, rename the contents, and clean up the original zip file.
+    """
     def __init__(self, download_path: str, file_prefix: str, file_suffix: str):
         """
         Constructor for the FileManager class. It initializes the object with the directory and file naming criteria for
@@ -19,6 +24,7 @@ class FileManager:
         self.download_path = download_path
         self.file_prefix = file_prefix
         self.file_suffix = file_suffix
+        self.logger = logging.getLogger(__name__)
 
     def wait_for_download(self, timeout: int = 6000, check_interval: int = 10) -> [str, None]:
         """
@@ -64,6 +70,6 @@ class FileManager:
             # Remove the original zip file
             os.remove(zip_file_path)
             print(f"Removed the original file: {zip_file_path}")
-
+        # pylint: disable=broad-except
         except Exception as e:
             print(f"Error unzipping or renaming the file - {zip_file_path}: {e}")

@@ -1,15 +1,21 @@
-""" Docstring for the TopographicProfile.py file.
+""" Docstring for the topographic_profile.py file.
 
 """
+import logging
 import os
 from typing import Tuple
 
 import googlemaps
-from .distance_utils import haversine
 from matplotlib import pyplot as plt
+from .distance_utils import haversine
 
 
 class TopographicProfile:
+    """
+    This module defines the TopographicProfile class, which provides functionality for obtaining and plotting
+    topographic profiles between a reference point and a set of antennas. It utilizes Google Maps' Elevation API to
+    retrieve elevation data along specified paths.
+    """
     def __init__(self, api_name: str, api_key: str):
         """
         Constructor for the TopographicProfile class. Initializes the object with the specified API name and key,
@@ -20,8 +26,9 @@ class TopographicProfile:
         """
         self.api_name = api_name
         self.api_client = self.__build_api_client(api_key)
+        self.logger = logging.getLogger(__name__)
 
-    def __build_api_client(self, api_key: str) -> googlemaps.Client:
+    def __build_api_client(self, api_key: str) -> [googlemaps.Client, None]:
         """
         Private method that constructs the appropriate API client based on the specified api_name. Currently,
         it supports the Google Maps API.
@@ -31,15 +38,18 @@ class TopographicProfile:
         """
         if self.api_name == 'google':
             return googlemaps.client.Client(key=api_key)
+        return None
 
     def get_topographic_profile(self, ref_lat_lon: Tuple[int, int], antennas_lat_lon: list) -> list:
         """
-        Public method that retrieves the topographic profiles between a reference latitude/longitude and a list of antenna
-        locations. It queries the Google Maps Elevation API for each antenna's path and returns the elevation data.
+        Public method that retrieves the topographic profiles between a reference latitude/longitude and a list of
+        antenna locations. It queries the Google Maps Elevation API for each antenna's path and returns the elevation
+        data.
 
         :param ref_lat_lon: A tuple containing the reference latitude and longitude.
         :param antennas_lat_lon: A list of tuples containing the latitude and longitude of antennas.
-        :return: A list of elevation profiles for each antenna, where each profile contains elevation data and corresponding locations.
+        :return: A list of elevation profiles for each antenna, where each profile contains elevation data and
+        corresponding locations.
         """
         list_of_profiles = []
 
@@ -54,8 +64,8 @@ class TopographicProfile:
     @staticmethod
     def plot_topographic_profile(profiles_to_plot: list, antennas_lat_lon: list, path: str):
         """
-        Static method that generates and saves a plot of the topographic profile for each antenna. It calculates cumulative
-        distances along the path and plots elevation against distance.
+        Static method that generates and saves a plot of the topographic profile for each antenna.
+        It calculates cumulative distances along the path and plots elevation against distance.
 
         :param profiles_to_plot: A list of elevation profiles to plot.
         :param antennas_lat_lon: A list of antenna locations.

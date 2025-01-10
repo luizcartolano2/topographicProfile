@@ -1,12 +1,17 @@
-"""Docstring for the FileAnalyzer.py file.
+"""Docstring for the file_analyzer.py file.
 
 """
+import logging
 from typing import Tuple
 import pandas as pd
 from .distance_utils import haversine
 
-
+# pylint: disable=too-few-public-methods
 class FileAnalyzer:
+    """
+    This module defines the FileAnalyzer class, which provides functionality for reading a CSV file containing antenna
+    information, processing the data, and calculating distances between antenna locations.
+    """
     def __init__(self, filename: str):
         """
         Constructor for the FileAnalyzer class. Initializes the object with a CSV filename and predefined column names.
@@ -17,6 +22,7 @@ class FileAnalyzer:
         self.columns = ['NomeEntidade', 'Tecnologia', 'FreqTxMHz', 'Azimute', 'Latitude', 'Longitude']
         self.numeric_columns = ["Latitude", "Longitude"]
         self.antennas_df = self.__read_csv()
+        self.logger = logging.getLogger(__name__)
 
     def __read_csv(self) -> pd.DataFrame:
         """
@@ -95,4 +101,3 @@ class FileAnalyzer:
                 break
 
         return available_antennas
-

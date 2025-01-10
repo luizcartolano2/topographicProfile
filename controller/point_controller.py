@@ -1,15 +1,22 @@
-""" Docstring for the PointController.py file.
+""" Docstring for the point_controller.py file.
 
 """
 import json
+import logging
 import os
 from typing import Tuple
 
-from analyzer.TopographicProfile import TopographicProfile
-from analyzer.FileAnalyzer import FileAnalyzer
+from analyzer.topographic_profile import TopographicProfile
+from analyzer.file_analyzer import FileAnalyzer
 
 
+# pylint: disable=too-few-public-methods
 class PointController:
+    """
+    This module defines the PointController class, which coordinates the analysis and plotting of antenna data and
+    topographic profiles. It relies on FileAnalyzer for antenna selection and TopographicProfile for retrieving and
+    plotting topographic profiles.
+    """
     def __init__(self, output_dir: str, file_analyzer: FileAnalyzer, topographic_profile: TopographicProfile):
         """
         Constructor for the PointController class. It initializes the object with directories and dependencies for
@@ -17,11 +24,13 @@ class PointController:
 
         :param output_dir: The directory where output files will be saved.
         :param file_analyzer: An instance of the FileAnalyzer class used to analyze antennas.
-        :param topographic_profile: An instance of the TopographicProfile class used to retrieve and plot topographic profiles.
+        :param topographic_profile: An instance of the TopographicProfile class used to retrieve and plot
+        topographic profiles.
         """
         self.output_dir = output_dir
         self.file_analyzer = file_analyzer
         self.topographic_profile = topographic_profile
+        self.logger = logging.getLogger(__name__)
 
     @staticmethod
     def __create_output_file(subfolder_path: str, data: dict):
@@ -36,13 +45,14 @@ class PointController:
         # Full path for the output file
         output_file_path = os.path.join(subfolder_path, "output.json")
         # Save dictionary to a text file in JSON format
-        with open(output_file_path, 'w') as file:
+        with open(output_file_path, 'w', encoding='utf-8') as file:
             file.write(json.dumps(data, indent=4))
 
     def analyze_lat_lon(self, lat_lon: Tuple[int, int]):
         """
-        Public method that analyzes the antennas and topographic profile for a given latitude/longitude point. It retrieves
-        the available antennas, saves the result to a JSON file, and generates the topographic profile plot for the antennas.
+        Public method that analyzes the antennas and topographic profile for a given latitude/longitude point.
+        It retrieves the available antennas, saves the result to a JSON file, and generates the topographic profile
+        plot for the antennas.
 
         :param lat_lon: The latitude and longitude of the reference point to analyze.
         """

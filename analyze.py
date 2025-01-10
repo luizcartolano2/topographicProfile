@@ -6,8 +6,8 @@ import os
 
 import pandas as pd
 
-from analyzer.FileAnalyzer import FileAnalyzer
-from analyzer.TopographicProfile import TopographicProfile
+from analyzer.file_analyzer import FileAnalyzer
+from analyzer.topographic_profile import TopographicProfile
 from controller import PointController
 from log import setup_logging
 
