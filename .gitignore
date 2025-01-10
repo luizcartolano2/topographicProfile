@@ -1,6 +1,8 @@
 bin/
 .idea/
 files/
+share/
+outputs/
 
 # General
 .DS_Store

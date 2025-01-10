@@ -1,22 +1,26 @@
+""" Docstring for the analyze.py file.
+
+"""
 import os
 
 import pandas as pd
 
-from TopographicProfile import TopographicProfile
+from analyzer.FileAnalyzer import FileAnalyzer
+from analyzer.TopographicProfile import TopographicProfile
+from controller import PointController
+
+filename = f'{os.getcwd()}/files/antennas-RJ.csv'
+output_dir = "outputs"
+
 
 if __name__ == '__main__':
-    download_path = f'{os.getcwd()}/files'
-    df = pd.read_csv(f'{download_path}/antennas-SP.csv', on_bad_lines='skip', delimiter=',')
-
+    file_analyzer = FileAnalyzer(filename=filename)
     top_profile = TopographicProfile('google', 'AIzaSyB00vnm5fWSn7C6JLRgIkzL_EWe8oaCeRI')
 
-    ref_lat_lon = (-22.799555, -45.195437)
+    controller = PointController(output_dir, file_analyzer, top_profile)
 
-    antennas_to_profile = top_profile.get_antennas_to_create_profile(
-        ref_lat_lon[0], ref_lat_lon[1], df, 0.5
-    )
+    df = pd.read_csv('files/LATLONGs Projeto 22(Planilha1).csv', delimiter=';')
+    lat_longs = [(row[0].item(), row[1].item()) for row in df.to_numpy()]
 
-    antennas_lat_lon = [tuple(map(float, t)) for t in antennas_to_profile[['Latitude', 'Longitude']].values]
-    profiles_to_plot = top_profile.get_topographic_profile(ref_lat_lon, antennas_lat_lon)
-
-    top_profile.plot_topographic_profile(profiles_to_plot)
+    for ref_lat_lon in lat_longs:
+        controller.analyze_lat_lon(ref_lat_lon)

@@ -1,34 +1,65 @@
-from pyppeteer import launch
+""" Docstring for the WebScraper.py file.
 
-from FileManager import FileManager
+"""
+from pyppeteer import launch
+from .FileManager import FileManager
 
 
 class WebScraper:
-    def __init__(self, url, download_path, headless=True):
+    def __init__(self, url: str, download_path: str, headless: bool = True):
+        """
+        Constructor for the WebScraper class. It initializes the scraper with the URL to scrape, the download path, and
+        an optional flag to run the browser in headless mode.
+
+        :param url: The URL of the webpage to scrape.
+        :param download_path: The path where the downloaded file will be saved.
+        :param headless: Whether to run the browser in headless mode (no UI). Default is True.
+        """
         self.url = url
         self.download_path = download_path
         self.headless = headless
 
-    async def __create_browser(self, headless):
+    async def __create_browser(self, headless: bool):
+        """
+        Creates a new browser instance asynchronously using the pyppeteer library.
+
+        :param headless: Whether to run the browser in headless mode.
+        """
         # Create the browser asynchronously
         self.browser = await launch(headless=headless)
 
     async def close_browser(self):
+        """
+        Closes the browser instance asynchronously.
+        """
         # Close the browser asynchronously
         await self.browser.close()
 
     async def __create_page(self):
+        """
+        Creates a new page instance in the browser asynchronously.
+        """
         # Create a new page asynchronously
         self.page = await self.browser.newPage()
 
     async def __set_page_download_behavior(self):
+        """
+        Sets the behavior for handling downloads asynchronously. It configures the page to allow downloads and
+        specifies the download path.
+        """
         # Set the download behavior asynchronously
         await self.page._client.send('Page.setDownloadBehavior', {
             'behavior': 'allow',
             'downloadPath': self.download_path
         })
 
-    async def download_file_for_state(self, state):
+    async def download_file_for_state(self, state: str):
+        """
+        Downloads a file for a specific state by interacting with the webpage, applying the state filter, and downloading
+        the results as a CSV file.
+
+        :param state: The state to filter by on the webpage.
+        """
         file_manager = FileManager(self.download_path, 'csv_', '.csv')
 
         await self.__create_browser(headless=self.headless)
@@ -57,6 +88,12 @@ class WebScraper:
         file_manager.unzip_and_rename(filename, f'antennas-{state}.csv')
 
     async def run(self, state):
+        """
+        Runs the complete process for downloading the file for the specified state. This includes launching the browser,
+        applying the filter, and downloading the file, then closing the browser.
+
+        :param state: The state to filter by on the webpage.
+        """
         # This method will be used to run the download process
         await self.download_file_for_state(state)
         await self.close_browser()

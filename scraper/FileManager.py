@@ -1,17 +1,33 @@
+""" Docstring for the FileManager.py file.
+
+"""
 import os
 import time
 import zipfile
 
 
 class FileManager:
-    def __init__(self, download_path, file_prefix, file_suffix):
+    def __init__(self, download_path: str, file_prefix: str, file_suffix: str):
+        """
+        Constructor for the FileManager class. It initializes the object with the directory and file naming criteria for
+        managing downloaded files.
+
+        :param download_path: The directory path where files are downloaded.
+        :param file_prefix: The prefix of the file to wait for and unzip.
+        :param file_suffix: The suffix of the file to unzip and rename.
+        """
         self.download_path = download_path
         self.file_prefix = file_prefix
         self.file_suffix = file_suffix
 
-    def wait_for_download(self, timeout=6000, check_interval=10):
+    def wait_for_download(self, timeout: int = 6000, check_interval: int = 10) -> [str, None]:
         """
-        Wait until a file with the specified prefix appears in the download folder.
+        Waits for a file with the specified prefix to appear in the download folder. It checks for the file at regular
+        intervals and returns the path of the file once it appears.
+
+        :param timeout: The maximum time to wait for the file in seconds. Default is 6000 seconds.
+        :param check_interval: The interval in seconds to wait between checks. Default is 10 seconds.
+        :return: The full path of the downloaded file if found, otherwise None.
         """
         start_time = time.time()
         while time.time() - start_time < timeout:
@@ -22,9 +38,13 @@ class FileManager:
             time.sleep(check_interval)
         return None
 
-    def unzip_and_rename(self, zip_file_path, new_name):
+    def unzip_and_rename(self, zip_file_path: str, new_name: str):
         """
-        Unzip the file and rename it.
+        Unzips the specified zip file and renames the extracted file according to the given new name. It also removes
+        the original zip file after extraction.
+
+        :param zip_file_path: The path of the zip file to unzip.
+        :param new_name: The new name to assign to the extracted file.
         """
         try:
             # Unzip the file

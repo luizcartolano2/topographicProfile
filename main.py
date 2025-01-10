@@ -4,7 +4,7 @@
 import os
 
 import asyncio
-from WebScraper import WebScraper
+from scraper import WebScraper
 
 
 if __name__ == "__main__":
