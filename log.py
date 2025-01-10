@@ -1,3 +1,6 @@
+""" Docstring for the log.py file.
+
+"""
 import logging
 import logging.config
 import os
