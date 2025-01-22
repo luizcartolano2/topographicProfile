@@ -20,6 +20,7 @@ class TopographicProfile:
     topographic profiles between a reference point and a set of antennas. It utilizes Google Maps' Elevation API to
     retrieve elevation data along specified paths.
     """
+
     def __init__(self, api_name: str, api_key: str):
         """
         Constructor for the TopographicProfile class. Initializes the object with the specified API name and key,
@@ -28,9 +29,10 @@ class TopographicProfile:
         :param api_name: The name of the API to use (e.g., 'google').
         :param api_key: The API key required to authenticate the client.
         """
+        self.logger = logging.getLogger(__name__)
         self.api_name = api_name
         self.api_client = self.__build_api_client(api_key)
-        self.logger = logging.getLogger(__name__)
+        self.logger.info("TopographicProfile initialized with API: %s", api_name)
 
     def __build_api_client(self, api_key: str) -> [googlemaps.Client, None]:
         """
@@ -40,8 +42,13 @@ class TopographicProfile:
         :param api_key: The API key for the client.
         :return: A Google Maps client instance if the API name is 'google'.
         """
+        self.logger.debug("Building API client with key: %s", api_key[:4] + "****")
+
         if self.api_name == 'google':
+            self.logger.info("Using Google Maps API")
             return googlemaps.client.Client(key=api_key)
+
+        self.logger.warning("Unsupported API name: %s", self.api_name)
         return None
 
     def get_topographic_profile(self, ref_lat_lon: Tuple[int, int], antennas_lat_lon: list) -> list:
@@ -55,13 +62,19 @@ class TopographicProfile:
         :return: A list of elevation profiles for each antenna, where each profile contains elevation data and
         corresponding locations.
         """
+        self.logger.info("Retrieving topographic profiles for reference point: %s", ref_lat_lon)
         list_of_profiles = []
 
         for antenna in antennas_lat_lon:
             path = [ref_lat_lon, antenna]
-            response = googlemaps.client.elevation_along_path(self.api_client, path, samples=50)
-
-            list_of_profiles.append(response)
+            self.logger.debug("Querying elevation for path: %s", path)
+            try:
+                response = googlemaps.client.elevation_along_path(self.api_client, path, samples=50)
+                list_of_profiles.append(response)
+                self.logger.info("Elevation data retrieved for antenna at: %s", antenna)
+            # pylint: disable=broad-except
+            except Exception as e:
+                self.logger.error("Error retrieving elevation data for antenna at %s: %s", antenna, e)
 
         return list_of_profiles
 
@@ -76,6 +89,8 @@ class TopographicProfile:
                                  dictionaries containing 'elevation' and 'location' keys.
         :param path: The directory path where the plot will be saved.
         """
+        self.logger.info("Generating topographic profile plots...")
+
         # Calculate the grid size for subplots
         num_profiles = len(profiles_to_plot)
         cols = 2
@@ -147,6 +162,8 @@ class TopographicProfile:
         :param antennas_lat_lon: A list of antenna locations.
         :param path: The directory path where the plots will be saved.
         """
+        self.logger.info("Plotting points on map with spot: %s", spot)
+
         # Combine the main spot and antennas latitudes and longitudes
         latitudes = [spot[0]] + [antenna[0] for antenna in antennas_lat_lon]
         longitudes = [spot[1]] + [antenna[1] for antenna in antennas_lat_lon]

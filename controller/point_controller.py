@@ -17,6 +17,7 @@ class PointController:
     topographic profiles. It relies on FileAnalyzer for antenna selection and TopographicProfile for retrieving and
     plotting topographic profiles.
     """
+
     def __init__(self, output_dir: str, file_analyzer: FileAnalyzer, topographic_profile: TopographicProfile):
         """
         Constructor for the PointController class. It initializes the object with directories and dependencies for
@@ -27,10 +28,11 @@ class PointController:
         :param topographic_profile: An instance of the TopographicProfile class used to retrieve and plot
         topographic profiles.
         """
+        self.logger = logging.getLogger(__name__)
         self.output_dir = output_dir
         self.file_analyzer = file_analyzer
         self.topographic_profile = topographic_profile
-        self.logger = logging.getLogger(__name__)
+        self.logger.info("PointController initialized with output directory: %s", output_dir)
 
     @staticmethod
     def __create_output_file(subfolder_path: str, data: dict):
@@ -44,6 +46,10 @@ class PointController:
         os.makedirs(subfolder_path, exist_ok=True)
         # Full path for the output file
         output_file_path = os.path.join(subfolder_path, "output.json")
+
+        # Log the creation of the output file
+        logging.info("Creating output file at: %s", output_file_path)
+
         # Save dictionary to a text file in JSON format
         with open(output_file_path, 'w', encoding='utf-8') as file:
             file.write(json.dumps(data, indent=4))
@@ -79,12 +85,27 @@ class PointController:
         subfolder_name = f"subfolder_{lat_lon[0]}_{lat_lon[1]}"
         subfolder_path = os.path.join(self.output_dir, subfolder_name)
 
-        available_antennas = self.file_analyzer.get_antennas_to_create_profile(4, ref_lat_lon=lat_lon)
+        self.logger.info("Analyzing lat/lon: %s", lat_lon)
 
+        available_antennas = self.file_analyzer.get_antennas_to_create_profile(4, ref_lat_lon=lat_lon)
+        self.logger.debug("Available antennas retrieved: %s", available_antennas)
+
+        # Create output file with the available antennas
         self.__create_output_file(subfolder_path, available_antennas)
+
         antennas_lat_lon_height = self.extract_antennas_from_data_dict(available_antennas)
         antennas_lat_lon = [ant[0] for ant in antennas_lat_lon_height]
 
+        # Log the antennas lat/lon
+        self.logger.debug("Extracted lat/lon for antennas: %s", antennas_lat_lon)
+
+        # Plot the points on the map
+        self.logger.info("Plotting points on map for lat/lon: %s", lat_lon)
         self.topographic_profile.plot_points_on_map(lat_lon, antennas_lat_lon, subfolder_path)
+
+        # Retrieve and plot the topographic profile
+        self.logger.info("Retrieving and plotting topographic profile for lat/lon: %s", lat_lon)
         profiles_to_plot = self.topographic_profile.get_topographic_profile(lat_lon, antennas_lat_lon)
         self.topographic_profile.plot_topographic_profile(antennas_lat_lon_height, profiles_to_plot, subfolder_path)
+
+        self.logger.info("Analysis for lat/lon %s completed successfully.", lat_lon)
