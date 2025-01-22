@@ -1,6 +1,7 @@
 """ Docstring for the topographic_profile.py file.
 
 """
+import math
 import logging
 import os
 from typing import Tuple
@@ -9,6 +10,7 @@ import googlemaps
 import plotly.graph_objects as go
 from matplotlib import pyplot as plt
 
+from .image_utils import calculate_dynamic_zoom
 from .distance_utils import haversine
 
 
@@ -63,76 +65,83 @@ class TopographicProfile:
 
         return list_of_profiles
 
-    @staticmethod
-    def plot_topographic_profile(profiles_to_plot: list, antennas_lat_lon: list, path: str):
+    # pylint: disable-msg=too-many-locals
+    def plot_topographic_profile(self, antennas: list, profiles_to_plot: list, path: str):
         """
-        Static method that generates and saves a plot of the topographic profile for each antenna.
-        It calculates cumulative distances along the path and plots elevation against distance.
+        Generates and saves a single figure with multiple subplots, each showing the topographic
+        profile for a specific location. Additionally, plots the 'Altura' field for each antenna.
 
-        :param profiles_to_plot: A list of elevation profiles to plot.
-        :param antennas_lat_lon: A list of antenna locations.
-        :param path: The directory path where the plots will be saved.
+        :param antennas: A list of tuples, where each tuple contains lat/lon and height data for antennas.
+        :param profiles_to_plot: A list of elevation profiles, where each profile is a list of
+                                 dictionaries containing 'elevation' and 'location' keys.
+        :param path: The directory path where the plot will be saved.
         """
-        # Define the path and the number of samples
-        for ite_, profile in enumerate(profiles_to_plot):
-            output_file_path = os.path.join(path, f"{antennas_lat_lon[ite_]}.png")
+        # Calculate the grid size for subplots
+        num_profiles = len(profiles_to_plot)
+        cols = 2
+        rows = math.ceil(num_profiles / cols)
 
+        # Initialize the figure
+        fig, axs = plt.subplots(rows, cols, figsize=(12, rows * 4))
+        axs = axs.flatten()
+
+        # Iterate over profiles and antennas, plotting each in a separate subplot
+        for ite_, (profile, (lat_lon, heights)) in enumerate(zip(profiles_to_plot, antennas)):
             # Extract elevation and calculate real distances
             elevations = [point['elevation'] for point in profile]
             coordinates = [(point['location']['lat'], point['location']['lng']) for point in profile]
 
             # Calculate cumulative distances
-            distances = [0]  # Start with zero for the first point
+            distances = [0]
             for i in range(1, len(coordinates)):
                 lat1, lon1 = coordinates[i - 1]
                 lat2, lon2 = coordinates[i]
                 distance = haversine(lat1, lon1, lat2, lon2)
-                distances.append(distances[-1] + distance)  # Add cumulative distance
-
-            # Convert distances to meters (optional)
+                distances.append(distances[-1] + distance)
             distances = [d * 1000 for d in distances]
 
             # Plot the elevation profile
-            plt.figure(figsize=(10, 6))
-            plt.plot(distances, elevations, label='Elevation Profile', color='blue')
-            plt.fill_between(distances, elevations, color='lightblue', alpha=0.5)
-            plt.title('Topographic Profile')
-            plt.xlabel('Distance (meters)')
-            plt.ylabel('Elevation (meters)')
-            plt.legend()
-            plt.grid(True)
-            plt.savefig(output_file_path)
+            ax = axs[ite_]
+            ax.plot(distances, elevations, label='Elevation Profile', color='blue')
+            ax.fill_between(distances, elevations, color='lightblue', alpha=0.5)
 
-    @staticmethod
-    def calculate_dynamic_zoom(latitudes, longitudes):
-        """
-        Calculate the optimal zoom level based on the bounding box of the points.
-        The zoom level will depend on the range of latitudes and longitudes.
+            last_elevation = elevations[-1]
+            for _, height_values in heights.items():
+                for height in height_values:
+                    adjusted_height = height + last_elevation
+                    ax.plot(
+                        [0, distances[-1]],
+                        [adjusted_height, adjusted_height],
+                        color='red',
+                        linestyle='--',
+                        linewidth=1,
+                        alpha=0.7
+                    )
 
-        :param latitudes: List of latitudes.
-        :param longitudes: List of longitudes.
-        :return: A zoom level (integer).
-        """
-        # Calculate the bounding box
-        lat_min, lat_max = min(latitudes), max(latitudes)
-        lon_min, lon_max = min(longitudes), max(longitudes)
+            # Add title and labels
+            ax.set_title(f'Antenna {ite_ + 1} ({lat_lon[0]:.4f}, {lat_lon[1]:.4f})')
+            ax.set_xlabel('Distance (meters)')
+            ax.set_ylabel('Elevation (meters)')
+            ax.grid(True)
 
-        # Calculate the center of the bounding box
-        center_lat = (lat_min + lat_max) / 2
-        center_lon = (lon_min + lon_max) / 2
+        # Hide any unused subplots
+        for i in range(num_profiles, len(axs)):
+            fig.delaxes(axs[i])
 
-        # Calculate the spread (distance) of the points in both latitude and longitude
-        lat_diff = lat_max - lat_min
-        lon_diff = lon_max - lon_min
+        # Adjust layout and save the figure
+        plt.tight_layout()
+        output_file_path = os.path.join(path, "topographic_profiles.png")
+        plt.savefig(output_file_path, bbox_inches='tight', dpi=300)
 
-        # Determine the zoom level based on the spread of the points
-        zoom = max(10, 12 - (lat_diff + lon_diff) // 1.5)  # You can fine-tune the divisor for zoom sensitivity
-
-        return center_lat, center_lon, zoom
+        self.logger.info("Topographic profiles with height saved to %s", output_file_path)
 
     def plot_points_on_map(self, spot: Tuple[int, int], antennas_lat_lon: list, path: str):
         """
-        .
+        Plots a map with a central "spot" point and multiple antenna locations, saving the map as a PNG file.
+
+        This function uses Plotly to create an interactive map visualization and save it as an image file.
+        The central spot is marked in blue, while the antennas are marked in red. The map is dynamically zoomed to fit
+        all points.
 
         :param spot: The central reference point (latitude, longitude), displayed in blue.
         :param antennas_lat_lon: A list of antenna locations.
@@ -143,7 +152,7 @@ class TopographicProfile:
         longitudes = [spot[1]] + [antenna[1] for antenna in antennas_lat_lon]
 
         # Calculate dynamic zoom level and center
-        center_lat, center_lon, zoom = self.calculate_dynamic_zoom(latitudes, longitudes)
+        center_lat, center_lon, zoom = calculate_dynamic_zoom(latitudes, longitudes)
 
         # Create a Mapbox plot
         fig = go.Figure(go.Scattermapbox(
