@@ -18,11 +18,11 @@ class FileAnalyzer:
 
         :param filename: The path to the CSV file containing the antenna data.
         """
+        self.logger = logging.getLogger(__name__)
         self.filename = filename
-        self.columns = ['NomeEntidade', 'Tecnologia', 'FreqTxMHz', 'Azimute', 'Latitude', 'Longitude']
+        self.columns = ['NomeEntidade', 'Tecnologia', 'FreqTxMHz', 'Azimute', 'Latitude', 'Longitude', 'AlturaAntena']
         self.numeric_columns = ["Latitude", "Longitude"]
         self.antennas_df = self.__read_csv()
-        self.logger = logging.getLogger(__name__)
 
     def __read_csv(self) -> pd.DataFrame:
         """
@@ -30,10 +30,13 @@ class FileAnalyzer:
 
         :return: A cleaned DataFrame containing the relevant antenna data.
         """
+        self.logger.info("Reading data from file: %s", self.filename)
+
         antennas = pd.read_csv(self.filename, on_bad_lines='skip', delimiter=',', usecols=self.columns, dtype=str)
         antennas[self.numeric_columns] = antennas[self.numeric_columns].apply(
-            lambda col: col.str.replace(",", ".").astype(float).round(5)
+            lambda col: pd.to_numeric(col.str.replace(",", "."), errors='coerce').round(5)
         )
+        antennas = antennas.dropna(subset=self.numeric_columns)
         antennas = antennas.dropna(subset=["Tecnologia"])
 
         return antennas
@@ -81,6 +84,7 @@ class FileAnalyzer:
                     'Freq': group['FreqTxMHz'].unique().tolist(),
                     'Tecnologia': group['Tecnologia'].unique().tolist(),
                     'Azimute': group['Azimute'].unique().tolist(),
+                    'Altura': group['AlturaAntena'].unique().tolist()
                 }
 
                 # Update distances and companies

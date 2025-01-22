@@ -6,7 +6,9 @@ import os
 from typing import Tuple
 
 import googlemaps
+import plotly.graph_objects as go
 from matplotlib import pyplot as plt
+
 from .distance_utils import haversine
 
 
@@ -100,3 +102,75 @@ class TopographicProfile:
             plt.legend()
             plt.grid(True)
             plt.savefig(output_file_path)
+
+    @staticmethod
+    def calculate_dynamic_zoom(latitudes, longitudes):
+        """
+        Calculate the optimal zoom level based on the bounding box of the points.
+        The zoom level will depend on the range of latitudes and longitudes.
+
+        :param latitudes: List of latitudes.
+        :param longitudes: List of longitudes.
+        :return: A zoom level (integer).
+        """
+        # Calculate the bounding box
+        lat_min, lat_max = min(latitudes), max(latitudes)
+        lon_min, lon_max = min(longitudes), max(longitudes)
+
+        # Calculate the center of the bounding box
+        center_lat = (lat_min + lat_max) / 2
+        center_lon = (lon_min + lon_max) / 2
+
+        # Calculate the spread (distance) of the points in both latitude and longitude
+        lat_diff = lat_max - lat_min
+        lon_diff = lon_max - lon_min
+
+        # Determine the zoom level based on the spread of the points
+        zoom = max(10, 12 - (lat_diff + lon_diff) // 1.5)  # You can fine-tune the divisor for zoom sensitivity
+
+        return center_lat, center_lon, zoom
+
+    def plot_points_on_map(self, spot: Tuple[int, int], antennas_lat_lon: list, path: str):
+        """
+        .
+
+        :param spot: The central reference point (latitude, longitude), displayed in blue.
+        :param antennas_lat_lon: A list of antenna locations.
+        :param path: The directory path where the plots will be saved.
+        """
+        # Combine the main spot and antennas latitudes and longitudes
+        latitudes = [spot[0]] + [antenna[0] for antenna in antennas_lat_lon]
+        longitudes = [spot[1]] + [antenna[1] for antenna in antennas_lat_lon]
+
+        # Calculate dynamic zoom level and center
+        center_lat, center_lon, zoom = self.calculate_dynamic_zoom(latitudes, longitudes)
+
+        # Create a Mapbox plot
+        fig = go.Figure(go.Scattermapbox(
+            mode="markers+text",
+            lat=latitudes,
+            lon=longitudes,
+            marker={'size': 10, 'color': ['blue'] + ['red'] * len(antennas_lat_lon)},
+            text=['Ponto Principal'] + [f'Antenna {i + 1}' for i in range(len(antennas_lat_lon))],
+            textposition="top center"
+        ))
+
+        # Set the map style (use Mapbox style or OpenStreetMap)
+        fig.update_layout(
+            title="Locations on Map",
+            # pylint: disable=use-dict-literal
+            mapbox=dict(
+                style="open-street-map",
+                center={"lat": center_lat, "lon": center_lon},
+                zoom=zoom
+            ),
+            showlegend=False
+        )
+
+        # Set file path for saving the image
+        output_file_path = os.path.join(path, "mapa.png")
+
+        # Save the figure as a PNG
+        fig.write_image(output_file_path, format="png", scale=2)
+
+        self.logger.info("Map saved to %s", output_file_path)

@@ -66,5 +66,6 @@ class PointController:
         for _, value in available_antennas.items():
             antennas_lat_lon.append(value['lat/lon'])
 
+        self.topographic_profile.plot_points_on_map(lat_lon, antennas_lat_lon, subfolder_path)
         profiles_to_plot = self.topographic_profile.get_topographic_profile(lat_lon, antennas_lat_lon)
         self.topographic_profile.plot_topographic_profile(profiles_to_plot, antennas_lat_lon, subfolder_path)
