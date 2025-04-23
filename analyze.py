@@ -22,7 +22,7 @@ if __name__ == '__main__':
     logger.info('Starting process to analyse the topographic profile of different points...')
 
     file_analyzer = FileAnalyzer(filename=filename)
-    top_profile = TopographicProfile('google', 'AIzaSyB00vnm5fWSn7C6JLRgIkzL_EWe8oaCeRI')
+    top_profile = TopographicProfile('google', 'key')
 
     controller = PointController(OUTPUT_DIR, file_analyzer, top_profile)
 
